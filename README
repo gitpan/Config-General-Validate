@@ -1,0 +1,35 @@
+NAME
+       Config::General::Validate
+
+DESCRIPTION
+
+        This module validates a config parsed by Config::General
+        against a given hash structure.
+
+INSTALLATION
+	to install, type:
+	  perl Makefile.PL
+	  make
+	  make test
+	  make install
+
+	to read the complete documentation, type:
+	perldoc Config::General::Validate
+
+
+COPYRIGHT
+       Copyright (c) 2007 by Thomas Linden <tom@daemon.de>
+
+       This library is free software; you can redistribute it
+       and/or modify it under the same terms as Perl itself.
+
+BUGS
+       make test does currently not catch all possible scenarios.
+
+
+AUTHOR
+       Thomas Linden <tlinden |AT| cpan.org>
+
+
+VERSION
+	1.00
