@@ -1,35 +1,251 @@
 NAME
-       Config::General::Validate
+    Config::General::Validate - Validate Config Hashes
+
+SYNOPSIS
+     use Config::General::Validate;
+     my $validator = new Config::General::Validate($reference);
+     if ( $validator->validate($config_hash_reference) ) {
+       print "valid\n";
+     }
+     else {
+       print "invalid\n";
+     }
 
 DESCRIPTION
+    This module validates a config hash reference against a given hash
+    structure. This hash could be the result of Config::General or just any
+    other hash structure. Eg. the hash returned by XML::Simple could also be
+    validated using this module. You may also use it to validate CGI input,
+    just fetch the input data from CGI, map it to a hash and validate it.
 
-        This module validates a config parsed by Config::General
-        against a given hash structure.
+    The following builtin data types can be used:
 
-INSTALLATION
-	to install, type:
-	  perl Makefile.PL
-	  make
-	  make test
-	  make install
+    int integer
 
-	to read the complete documentation, type:
-	perldoc Config::General::Validate
+    number
+        real number
 
+    word
+        single word
 
-COPYRIGHT
-       Copyright (c) 2007 by Thomas Linden <tom@daemon.de>
+    line
+        line of text
 
-       This library is free software; you can redistribute it
-       and/or modify it under the same terms as Perl itself.
+    text
+        a whole text(blob) including newlines.
 
-BUGS
-       make test does currently not catch all possible scenarios.
+    regex
+        regex starting with qr.
 
+        Please note, that this doesn't mean you can provide here a regex
+        against config options must match.
+
+        Instead this means that the config options contains a regex.
+
+        eg:
+
+         <cfg>
+           grp  = qr/root|wheel/
+         </cfg>
+
+        regex would match the content of the variable 'grp' in this example.
+
+        To add your own rules for validation, use the type() method, see
+        below.
+
+    uri uri, right
+
+    ipv4
+        ip address (v4)
+
+    cidr
+        same as above with cidr netmast (/24)
+
+    quoted
+        text quoted with single quotes
+
+    hostname
+        valid hostname
+
+    resolvablehost
+        hostname resolvable via dns lookup
+
+    path
+        valid absolute path (portable)
+
+    fileexists
+        file which must exists
+
+    user
+        existent user
+
+    group
+        existent group
+
+    port
+        valid tcp/udp port
+
+    novars
+        text shall not contain variables
+
+VALIDATOR STRUCTURE
+    The expected structure must be a standard perl hash reference. This hash
+    may look like the config you are validating but instead of real-live
+    values it contains types that define of what type a given value has to
+    be.
+
+    In addition the hash may be deeply nested. In this case the validated
+    config must be nested the same way as the reference hash.
+
+    Example:
+
+     $reference = { user => 'word', uid => 'int' };
+
+    The following config would be validated successful:
+
+     $config = { user => 'HansDampf',  uid => 92 };
+
+    this one not:
+
+     $config = { user => 'Hans Dampf', uid => 'nine' };
+                              ^                ^^^^
+                              |                |
+                              |                +----- is not a number
+                              +---------------------- space not allowed
+
+    For easier writing of references you are encouraged to use
+    Config::General, just write the definition using the syntax of
+    Config::General, get the hash of it and use this hash for validation.
+
+    See t/run.t there are some examples of this technique.
+
+SUBROUTINES/METHODS
+    validate($config)
+        $config must be a hash reference you'd like to validate.
+
+        It returns a true value if the given structure looks valid.
+
+        If the return value is false (0), then the error message will be
+        written to the variable $!.
+
+    type(%types)
+        You can enhance the validator by adding your own rules. Just add one
+        or more new types using a simple hash using the type() method.
+        Values in this hash can be regexes or anonymous subs.
+
+        Example:
+
+         $v3->type(
+          (
+          address => qr(^\w+\s\s*\d+$),
+          list    =>
+            sub {
+              my $list = $_[0];
+              my @list = split /\s*,\s*/, $list;
+              if (scalar @list > 1) {
+                return 1;
+              }
+              else {
+                return 0;
+              }
+            }
+          )
+         );
+
+        In this example we add 2 new types, 'list' and 'address', which are
+        really simple. 'address' is a regex which matches a word followed by
+        an integer. 'list' is a subroutine which gets called during
+        evaluation for each option which you define as type 'list'.
+
+        Such subroutines must return a true value in order to produce a
+        match.
+
+        You can also add reversive types, which are like all other types but
+        start with no. The validator does a negative match in such a case,
+        thus you will have a match if a variable does not match the type.
+        The builtin type 'novars' is such a type.
+
+        Regexes will be executed exactly as given. No flags or ^ or $ will
+        be used by the module. Eg. if you want to match the whole value from
+        beginning to the end, add ^ and $, like you can see in our 'address'
+        example above.
+
+    debug()
+        Enables debug output which gets printed to STDERR.
+
+    errstr()
+        Returns the last error, which is useful to notify the user about
+        what happened.
+
+ARRAYS
+    Arrays must be handled in a special way, just define an array with two
+    elements and the second empty. The config will only validated against
+    the first element in the array.
+
+    We assume all elements in an array must have the same structure.
+
+    Example for array of hashes:
+
+     $reference = {
+                    [
+                      {
+                         user => 'word',
+                         uid => 'int'
+                      },
+                      {} # empty 2nd element
+                    ]
+                   };
+
+    Example of array of values:
+
+     $reference = {
+      var => [ 'int', '' ]
+     }
+
+EXAMPLES
+    Take a look to t/run.t for lots of examples.
+
+CONFIGURATION AND ENVIRONMENT
+    No environment variables will be used.
+
+SEE ALSO
+    I recommend you to read the following documentations, which are supplied
+    with perl:
+
+     perlreftut                     Perl references short introduction
+     perlref                        Perl references, the rest of the story
+     perldsc                        Perl data structures intro
+     perllol                        Perl data structures: arrays of arrays
+
+     XML::Simple                    The very same but with xml files.
+
+LICENSE AND COPYRIGHT
+    Copyright (c) 2007 Thomas Linden
+
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
+BUGS AND LIMITATIONS
+    See rt.cpan.org for current bugs, if any.
+
+INCOMPATIBILITIES
+    None known.
+
+DIAGNOSTICS
+    To debug Config::General::Validate use debug() or the perl debugger, see
+    perldebug.
+
+    For example to debug the regex matching during processing try this:
+
+     perl -Mre=debug yourscript.pl
+
+DEPENDENCIES
+    Config::General::Validate depends on the module Regexp::Common,
+    File::Spec and File::stat.
 
 AUTHOR
-       Thomas Linden <tlinden |AT| cpan.org>
-
+    Thomas Linden <tlinden |AT| cpan.org>
 
 VERSION
-	1.00
+    1.01
+
