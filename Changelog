@@ -1,3 +1,7 @@
+1.03
+	o oops - forgot to increase version number, therefore CPAN
+	  didn't get it.
+
 1.02
 	o removed inheritance of Config::General, which is senceless
 

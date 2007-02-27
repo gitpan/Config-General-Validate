@@ -23,7 +23,7 @@ use File::stat;
 use constant FALSE => 0;
 use constant TRUE  => 1;
 
-$Config::General::Validate::VERSION = 1.01;
+$Config::General::Validate::VERSION = 1.03;
 
 use vars  qw(@ISA);
 
@@ -491,7 +491,7 @@ Thomas Linden <tlinden |AT| cpan.org>
 
 =head1 VERSION
 
-1.02
+1.03
 
 =cut
 
